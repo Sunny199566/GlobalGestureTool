@@ -7,35 +7,33 @@ on:
 jobs:
   build:
     runs-on: macos-latest
-    env:
-      THEOS: ${{ github.workspace }}/theos
-      SDK_VERSION: "17.0"
     steps:
-      - name: Checkout source code
+      - uses: actions/checkout@v4
+
+      - name: Checkout Theos
         uses: actions/checkout@v4
+        with:
+          repository: theos/theos
+          ref: master
+          submodules: recursive
+          path: theos
 
-      - name: Clone Theos
+      - name: Checkout SDK 17.0
+        uses: actions/checkout@v4
+        with:
+          repository: theos/sdks
+          sparse-checkout: iPhoneOS17.0.sdk
+          path: theos/sdks
+
+      - name: Install dependencies
         run: |
-          git clone --recursive https://github.com/theos/theos.git ${{ env.THEOS }}
+          brew install make ldid xz
+          echo "THEOS=$PWD/theos" >> $GITHUB_ENV
 
-      - name: Install dependencies ldid dpkg
-        run: |
-          brew install ldid dpkg
+      - name: Build deb
+        run: make package FINALPACKAGE=1
 
-      - name: Update Theos & download patched SDK
-        run: |
-          export THEOS=${{ env.THEOS }}
-          export PATH="$THEOS/bin:$PATH"
-          update-theos
-
-      - name: Compile & Package deb
-        run: |
-          export THEOS=${{ env.THEOS }}
-          export PATH="$THEOS/bin:$PATH"
-          make package FINALPACKAGE=1 SDKVERSION=${{ env.SDK_VERSION }}
-
-      - name: Upload deb artifact
+      - name: Upload deb
         uses: actions/upload-artifact@v4
         with:
-          name: GlobalGestureTool-Deb
           path: packages/*.deb
