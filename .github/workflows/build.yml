@@ -18,11 +18,12 @@ jobs:
           submodules: recursive
           path: theos
 
-      - name: Checkout SDK 17.0
+      # ✅ 修改为仓库内存在的 iPhoneOS16.5.sdk
+      - name: Checkout SDK 16.5
         uses: actions/checkout@v4
         with:
           repository: theos/sdks
-          sparse-checkout: iPhoneOS17.0.sdk
+          sparse-checkout: iPhoneOS16.5.sdk
           path: theos/sdks
 
       - name: Install dependencies
