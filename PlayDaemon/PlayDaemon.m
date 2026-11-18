@@ -2,6 +2,7 @@
 #import <UIKit/UIKit.h>
 #import <CoreGraphics/CoreGraphics.h>
 #include <mach/mach_time.h>
+#include <dlfcn.h>
 
 typedef void (*GSEventSendRecordedTouchEvent_t)(int touchID, int phase, CGPoint point, double timestamp);
 static GSEventSendRecordedTouchEvent_t GSEventSendRecordedTouchEvent = NULL;
@@ -58,7 +59,7 @@ static void playGesture() {
 
     GestureHeader header;
     [fileData getBytes:&header length:sizeof(GestureHeader)];
-    if(header.magic != 0xxxxx) return;
+    if(header.magic != 0x12345678) return;
 
     CGSize screenSize = [UIScreen mainScreen].bounds.size;
     uint8_t curOrient = ([UIApplication sharedApplication].statusBarOrientation > UIInterfaceOrientationPortrait) ? 1 : 0;
