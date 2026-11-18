@@ -76,6 +76,12 @@ class ScriptManager: ObservableObject {
             }
         }
     }
+
+    // ==========【新增：选中脚本，传给PlayDaemon回放进程】==========
+    func selectScriptForPlay(item: ScriptFile) {
+        ud.set(item.fullPath, forKey: "GesturePlayer_SelectedScriptPath")
+        ud.synchronize()
+    }
     
     func writeInjectPlist(bundleId: String) {
         let plistPath = injectDir + bundleId + ".plist"
@@ -152,6 +158,10 @@ struct GestureManagerApp: App {
                             HStack {
                                 Text(s.name)
                                 Spacer()
+                                // ==========【新增：选择回放按钮】==========
+                                Button("选择回放") {
+                                    vm.selectScriptForPlay(item: s)
+                                }
                                 Button("删除", role: .destructive) {
                                     vm.deleteScript(item: s)
                                 }
