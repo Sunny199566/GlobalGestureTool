@@ -5,4 +5,4 @@ Architecture: iphoneos-arm64e
 Description: Rootless手势录制工具，临时注入录制触摸，保存dat脚本
 Maintainer: DIY
 Section: Tweaks
-Depends: mobilesubstrate, libhooker
+Depends: mobilesubstrate, ellekit
