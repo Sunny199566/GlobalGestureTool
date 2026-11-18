@@ -3,9 +3,15 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleIdentifier</key>
-    <string>com.globalgesture.gesturemanager</string>
-    <key>CFBundleName</key>
+    <string>com.globalgesture.tool</string>
+    <key>CFBundleExecutable</key>
     <string>GestureManager</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleName</key>
+    <string>GlobalGestureTool</string>
+    <key>CFBundleDisplayName</key>
+    <string>GlobalGestureTool</string>
     <key>CFBundleVersion</key>
     <string>1.0</string>
     <key>CFBundleShortVersionString</key>
