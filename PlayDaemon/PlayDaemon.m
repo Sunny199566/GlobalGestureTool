@@ -61,9 +61,6 @@ static void playGesture() {
     [fileData getBytes:&header length:sizeof(GestureHeader)];
     if(header.magic != 0x12345678) return;
 
-    CGSize screenSize = [UIScreen mainScreen].bounds.size;
-
-    // ✅修复：废弃statusBarOrientation → 使用UIWindowScene获取方向
     UIInterfaceOrientation curUIOrient = UIInterfaceOrientationPortrait;
     for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
         if (scene.activationState == UISceneActivationStateForegroundActive) {
@@ -80,7 +77,6 @@ static void playGesture() {
 
     g_playing = YES;
     uint64_t startTime = mach_absolute_time();
-    // ✅修复：__block 允许block内部修改offset
     __block NSUInteger offset = sizeof(GestureHeader);
     NSUInteger evSize = sizeof(TouchEvent);
 
