@@ -3,10 +3,10 @@ THEOS_PACKAGE_INSTALL_PREFIX = /var/jb
 
 include $(THEOS)/makefiles/common.mk
 
-EXECUTABLE_NAME = PlayDaemon
+TOOL_NAME = PlayDaemon
 PlayDaemon_FILES = PlayDaemon.m
 PlayDaemon_CFLAGS = -fobjc-arc
 PlayDaemon_FRAMEWORKS = UIKit Foundation CoreGraphics
-PlayDaemon_CODESIGN_FLAGS = -SPlayDaemon.entitlements
+PlayDaemon_INSTALL_PATH = /var/jb/usr/bin
 
-include $(THEOS_MAKE_PATH)/executable.mk
+include $(THEOS_MAKE_PATH)/tool.mk
