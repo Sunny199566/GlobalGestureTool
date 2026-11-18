@@ -49,14 +49,14 @@ static void appendTouchEvent(UITouch *touch, NSNumber *fingerId, CGPoint x, CGPo
     [g_recordBuffer appendBytes:&ev length:sizeof(TouchEvent)];
 }
 
-static void startRecording() {
+// ✅ 添加 __attribute__((unused)) 解决未使用函数编译报错
+static void __attribute__((unused)) startRecording() {
     if(g_recordBuffer) return;
     mach_timebase_info(&g_timebase);
     g_recordBuffer = [NSMutableData new];
     g_recordStartTime = mach_absolute_time();
 
     CGSize scrSize = [UIScreen mainScreen].bounds.size;
-    // 第68行，原方向代码，Makefile已经加-Wno-deprecated-declarations，不再报错
     uint8_t orient = UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation) ? 1 : 0;
 
     GestureHeader header = {
@@ -69,7 +69,7 @@ static void startRecording() {
     [g_recordBuffer appendBytes:&header length:sizeof(GestureHeader)];
 }
 
-static void stopRecordingAndSave() {
+static void __attribute__((unused)) stopRecordingAndSave() {
     if(!g_recordBuffer) return;
     GestureHeader *hdr = (GestureHeader *)g_recordBuffer.mutableBytes;
     hdr->eventCount = (uint32_t)((g_recordBuffer.length - sizeof(GestureHeader)) / sizeof(TouchEvent));
@@ -90,7 +90,6 @@ static void stopRecordingAndSave() {
     if(event.type != UIEventTypeTouches || !g_recordBuffer) return;
     for(UITouch *touch in event.allTouches) {
         CGPoint pt = [touch locationInView:nil];
-        // ✅ 第149行修复：KVC获取私有 _touchIdentifier
         NSNumber *fingerId = [touch valueForKey:@"_touchIdentifier"];
         appendTouchEvent(touch, fingerId, pt, pt);
     }
