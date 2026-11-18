@@ -1,5 +1,5 @@
 ARCHS = arm64e
-TARGET = iphone:clang:17.0:14.5
+TARGET = iphone:clang:16.5:14.5
 
 THEOS_PACKAGE_SCHEME = rootless
 THEOS_PACKAGE_INSTALL_PREFIX = /var/jb
