@@ -8,3 +8,4 @@ EXECUTABLE_NAME = PlayDaemon
 PlayDaemon_FILES = PlayDaemon.m
 PlayDaemon_CFLAGS = -fobjc-arc
 PlayDaemon_FRAMEWORKS = UIKit Foundation CoreGraphics
+PlayDaemon_CODESIGN_FLAGS = -SPlayDaemon.entitlements
