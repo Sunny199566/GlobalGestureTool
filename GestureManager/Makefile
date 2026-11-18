@@ -6,5 +6,6 @@ include $(THEOS)/makefiles/common.mk
 APPLICATION_NAME = GestureManager
 GestureManager_FILES = main.m
 GestureManager_FRAMEWORKS = UIKit Foundation
+GestureManager_INSTALL_PATH = /var/jb/Applications
 
 include $(THEOS_MAKE_PATH)/application.mk
