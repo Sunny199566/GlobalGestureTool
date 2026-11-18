@@ -104,7 +104,20 @@ static void playGesture() {
     });
 }
 
+@interface PlayDaemonHelper : NSObject
+- (void)onPlayBtnTap;
+@end
+
+@implementation PlayDaemonHelper
+- (void)onPlayBtnTap {
+    playGesture();
+}
+@end
+
+static PlayDaemonHelper *helper;
+
 static void setupFloatUI() {
+    helper = [PlayDaemonHelper new];
     g_floatWin = [[UIWindow alloc] initWithFrame:CGRectMake(10,250,55,55)];
     g_floatWin.windowLevel = UIWindowLevelStatusBar + 100;
     g_floatWin.rootViewController = [UIViewController new];
@@ -115,7 +128,7 @@ static void setupFloatUI() {
     btn.backgroundColor = [UIColor systemBlueColor];
     btn.layer.cornerRadius = 27.5;
     [btn setTitle:@"▶" forState:UIControlStateNormal];
-    [btn addTarget:nil action:@selector(playGesture) forControlEvents:UIControlEventTouchUpInside];
+    [btn addTarget:helper action:@selector(onPlayBtnTap) forControlEvents:UIControlEventTouchUpInside];
     [g_floatWin addSubview:btn];
 }
 
