@@ -1,0 +1,47 @@
+name: Build GlobalGestureTool Rootless arm64e
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: # 网页手动点击编译
+
+jobs:
+  build:
+    runs-on: macos-latest
+    env:
+      THEOS: ${{ github.workspace }}/theos
+      SDK_VERSION: "17.0"
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Clone Theos
+        uses: actions/checkout@v4
+        with:
+          repository: theos/theos
+          ref: master
+          submodules: recursive
+          path: theos
+
+      - name: Download iPhoneOS17.0 SDK
+        uses: actions/checkout@v4
+        with:
+          repository: theos/sdks
+          sparse-checkout: iPhoneOS17.0.sdk
+          path: theos/sdks
+
+      - name: Install dependencies ldid dpkg
+        run: |
+          brew install ldid dpkg
+
+      - name: Compile & Package deb
+        run: |
+          export THEOS=${{ github.workspace }}/theos
+          export PATH="$THEOS/bin:$PATH"
+          make clean
+          make package FINALPACKAGE=1
+
+      - name: Upload deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GlobalGestureTool-Deb
+          path: packages/*.deb
