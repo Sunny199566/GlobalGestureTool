@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <CoreGraphics/CoreGraphics.h>
+#include <mach/mach_time.h>
 
 typedef struct {
     uint32_t magic;
@@ -19,9 +20,17 @@ typedef struct {
     uint64_t delayNanos;
 } TouchEvent;
 
+// GSEvent 私有函数声明
+extern void GSEventSendRecordedTouchEvent(int touchID, int phase, CGPoint point, double timestamp);
+
 static UIWindow *g_floatWin;
 static BOOL g_playing = NO;
 static NSString *g_selectedScriptPath = nil;
+static mach_timebase_info_data_t g_timebase;
+
+static double machTimeToSeconds(uint64_t machTime) {
+    return (double)machTime * (double)g_timebase.numer / (double)g_timebase.denom / 1e9;
+}
 
 static void checkSelectedScript() {
     NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
@@ -51,6 +60,7 @@ static void playGesture() {
     g_playing = YES;
     NSUInteger offset = sizeof(GestureHeader);
     NSUInteger evSize = sizeof(TouchEvent);
+    uint64_t startTime = mach_absolute_time();
     
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
         while (offset + evSize <= fileData.length && g_playing) {
@@ -58,7 +68,21 @@ static void playGesture() {
             [fileData getBytes:&ev range:NSMakeRange(offset, evSize)];
             offset += evSize;
 
-            usleep((useconds_t)(ev.delayNanos / 1000));
+            uint64_t targetAbsTime = startTime + ev.delayNanos * g_timebase.denom / g_timebase.numer;
+            while(mach_absolute_time() < targetAbsTime) {
+                usleep(50);
+            }
+
+            int phase;
+            switch(ev.type) {
+                case 0: phase = 0; break; // DOWN
+                case 1: phase = 1; break; // MOVE
+                case 2: phase = 2; break; // UP
+                default: phase = 2;
+            }
+            CGPoint pt = CGPointMake(ev.x, ev.y);
+            double ts = machTimeToSeconds(mach_absolute_time());
+            GSEventSendRecordedTouchEvent(ev.fingerId, phase, pt, ts);
         }
         g_playing = NO;
     });
@@ -80,6 +104,7 @@ static void setupFloatWindow() {
 
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
+        mach_timebase_info(&g_timebase);
         dispatch_async(dispatch_get_main_queue(), ^{
             setupFloatWindow();
             [NSTimer scheduledTimerWithTimeInterval:0.3 repeats:YES block:^(NSTimer * _Nonnull timer) {
