@@ -7,7 +7,7 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = RecordTweak
 RecordTweak_FILES = Tweak.x
-RecordTweak_CFLAGS = -fobjc-arc
+RecordTweak_CFLAGS = -fobjc-arc -Wno-deprecated-declarations
 RecordTweak_FRAMEWORKS = UIKit CoreGraphics
 
 include $(THEOS_MAKE_PATH)/tweak.mk
