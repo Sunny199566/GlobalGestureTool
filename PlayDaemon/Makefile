@@ -5,7 +5,7 @@ include $(THEOS)/makefiles/common.mk
 
 TOOL_NAME = PlayDaemon
 PlayDaemon_FILES = PlayDaemon.m
-PlayDaemon_CFLAGS = -fobjc-arc
+PlayDaemon_CFLAGS = -fobjc-arc -Wno-deprecated-declarations
 PlayDaemon_FRAMEWORKS = UIKit Foundation CoreGraphics
 PlayDaemon_INSTALL_PATH = /var/jb/usr/bin
 
