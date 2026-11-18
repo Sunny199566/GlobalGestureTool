@@ -62,7 +62,17 @@ static void playGesture() {
     if(header.magic != 0x12345678) return;
 
     CGSize screenSize = [UIScreen mainScreen].bounds.size;
-    uint8_t curOrient = ([UIApplication sharedApplication].statusBarOrientation > UIInterfaceOrientationPortrait) ? 1 : 0;
+
+    // ✅修复：废弃statusBarOrientation → 使用UIWindowScene获取方向
+    UIInterfaceOrientation curUIOrient = UIInterfaceOrientationPortrait;
+    for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
+        if (scene.activationState == UISceneActivationStateForegroundActive) {
+            curUIOrient = scene.interfaceOrientation;
+            break;
+        }
+    }
+    uint8_t curOrient = (curUIOrient > UIInterfaceOrientationPortrait) ? 1 : 0;
+
     if(header.orientation != curOrient) {
         NSLog(@"[PlayDaemon] Orientation mismatch!");
         return;
@@ -70,7 +80,8 @@ static void playGesture() {
 
     g_playing = YES;
     uint64_t startTime = mach_absolute_time();
-    NSUInteger offset = sizeof(GestureHeader);
+    // ✅修复：__block 允许block内部修改offset
+    __block NSUInteger offset = sizeof(GestureHeader);
     NSUInteger evSize = sizeof(TouchEvent);
 
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
