@@ -6,10 +6,18 @@
 - (void)playGesture;
 @end
 
-@interface DaemonHandler : NSObject <GestureDaemonProtocol>
+@interface DaemonHandler : NSObject <NSXPCListenerDelegate, GestureDaemonProtocol>
 @end
 
 @implementation DaemonHandler
+
+- (BOOL)listener:(NSXPCListener *)listener shouldAcceptNewConnection:(NSXPCConnection *)newConnection {
+    newConnection.exportedInterface = [NSXPCInterface interfaceWithProtocol:@protocol(GestureDaemonProtocol)];
+    newConnection.exportedObject = self;
+    [newConnection resume];
+    return YES;
+}
+
 - (void)startRecord {
     NSLog(@"[Daemon] ✅ 收到指令：开始录制手势");
     // ========== 这里放你的触摸采集底层录制代码 ==========
@@ -26,8 +34,9 @@
 
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
+        DaemonHandler *handler = [[DaemonHandler alloc] init];
         NSXPCListener *listener = [[NSXPCListener alloc] initWithMachServiceName:@"com.globalgesture.gesturemanager.xpc"];
-        listener.delegate = [[DaemonHandler alloc] init];
+        listener.delegate = handler;
         [listener resume];
         [[NSRunLoop currentRunLoop] run];
     }
