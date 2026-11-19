@@ -33,26 +33,27 @@ jobs:
         run: |
           echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
 
-      # ========== 第一步：编译越狱deb包（RecordTweak + PlayDaemon）==========
+      # ========== 编译deb（RecordTweak + PlayDaemon） ==========
       - name: Build deb package (Tweak & Daemon)
         run: |
           make clean
           make package FINALPACKAGE=1
 
-      # ========== 第二步：GestureManager make stage + 手动zip打包IPA ==========
+      # ========== GestureManager 编译 + 手动拷贝Info.plist + IPA打包 ==========
       - name: Build GestureManager IPA for TrollStore
         run: |
           export THEOS=$GITHUB_WORKSPACE/theos
           cd GestureManager
           make clean
           make stage
-          APP_PATH=$(find .theos/_/Applications -name "GestureManager.app" -type d)
+          APP_PATH=".theos/_/Applications/GestureManager.app"
+          cp Info.plist "$APP_PATH/"
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
           zip -r GestureManager.ipa Payload
           cp GestureManager.ipa $GITHUB_WORKSPACE/
 
-      # ========== 上传全部构建产物（deb + ipa）==========
+      # ========== 上传产物 deb + ipa ==========
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
