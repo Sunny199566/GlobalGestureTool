@@ -10,19 +10,11 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Setup Theos
+      - name: Install Theos official installer
         run: |
-          git clone --depth 1 https://github.com/theos/theos.git $HOME/theos
+          curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos | bash
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "PATH=$HOME/theos/bin:$PATH" >> $GITHUB_PATH
-
-      - name: Download SDK repo (Official zip method)
-        run: |
-          cd $THEOS/sdks
-          curl -LO https://github.com/theos/sdks/archive/master.zip
-          unzip -q master.zip
-          mv sdks-master/iPhoneOS17.0.sdk ./
-          rm -rf sdks-master master.zip
 
       - name: Build Tweak & Package deb
         run: |
