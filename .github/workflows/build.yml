@@ -27,30 +27,27 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install ldid dpkg gnu-sed
+          brew install ldid dpkg make
 
-      - name: Build GestureManager App Binary
+      - name: Setup Theos env
         run: |
-          export THEOS=$PWD/theos
-          export PATH="$THEOS/bin:$PATH"
-          cd GestureManager
+          echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
+
+      - name: Build all subprojects & package deb
+        run: |
+          export THEOS=$GITHUB_WORKSPACE/theos
           make clean
-          make ARCHS=arm64e TARGET=iphone:clang:16.5:14.5 THEOS_PACKAGE_SCHEME=rootless
-          cd ..
-          mkdir -p layout/var/jb/Applications/
-          # 自动搜索复制完整 GestureManager.app
-          find GestureManager/.theos -name "GestureManager.app" -type d -exec cp -R {} layout/var/jb/Applications/ \;
-          # ✅ 强制伪签名！解决 ldid: -e, -q, and -h require a signed binary
-          ldid -S layout/var/jb/Applications/GestureManager.app/GestureManager
-
-      - name: Run make package FINALPACKAGE=1
-        run: |
-          export THEOS=$PWD/theos
-          export PATH="$THEOS/bin:$PATH"
           make package FINALPACKAGE=1
 
-      - name: Upload Deb Artifact
+      - name: Copy GestureManager app into layout & delete .gitkeep
+        run: |
+          mkdir -p layout/Applications/
+          find GestureManager/.theos -name "GestureManager.app" -type d -exec cp -R {} layout/Applications/ \;
+          # 删除仓库占位的.gitkeep，打包deb前清理干净
+          find layout -name ".gitkeep" -delete
+
+      - name: Upload deb artifact
         uses: actions/upload-artifact@v4
         with:
-          name: GlobalGestureTool-deb
-          path: packages/*.deb
+          name: GlobalGestureTool-Deb
+          path: ./packages/*.deb
