@@ -6,7 +6,14 @@ static UIView *floatBall;
 static CGPoint touchStartPoint;
 static BOOL isDragging;
 
-void onFloatButtonTap() {
+// ✅ 手势Target辅助类
+@interface GestureTargetHelper : NSObject
+- (void)onFloatButtonTap:(UITapGestureRecognizer *)gesture;
+- (void)onFloatButtonLongPress:(UILongPressGestureRecognizer *)gesture;
+@end
+
+@implementation GestureTargetHelper
+- (void)onFloatButtonTap:(UITapGestureRecognizer *)gesture {
     NSLog(@"[GlobalGestureTool] ✅ 悬浮球单击触发，开始回放脚本");
     IOHIDTouchSender *sender = [IOHIDTouchSender sharedInstance];
     NSString *scriptPath = @"/var/jb/Library/GlobalGestureTool/default.json";
@@ -17,8 +24,7 @@ void onFloatButtonTap() {
     }
     [sender runScript:script];
 }
-
-void onFloatButtonLongPress() {
+- (void)onFloatButtonLongPress:(UILongPressGestureRecognizer *)gesture {
     IOHIDTouchSender *sender = [IOHIDTouchSender sharedInstance];
     NSString *scriptPath = @"/var/jb/Library/GlobalGestureTool/default.json";
     if(sender.isRecording){
@@ -27,6 +33,9 @@ void onFloatButtonLongPress() {
         [sender startRecord];
     }
 }
+@end
+
+static GestureTargetHelper *gestureTarget;
 
 %hook SpringBoard
 - (void)applicationDidFinishLaunching {
@@ -44,9 +53,12 @@ void onFloatButtonLongPress() {
         floatBall.backgroundColor = [[UIColor darkGrayColor] colorWithAlphaComponent:0.75];
         floatBall.layer.cornerRadius = ballSize / 2.0;
         floatBall.layer.masksToBounds = YES;
+
+        // ✅ 创建手势target实例
+        gestureTarget = [[GestureTargetHelper alloc] init];
         
-        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:&onFloatButtonTap action:@selector(onFloatButtonTap)];
-        UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:&onFloatButtonLongPress action:@selector(onFloatButtonLongPress)];
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:gestureTarget action:@selector(onFloatButtonTap:)];
+        UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:gestureTarget action:@selector(onFloatButtonLongPress:)];
         longPress.minimumPressDuration = 0.5;
         UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:floatBall action:@selector(handlePan:)];
         
@@ -89,7 +101,8 @@ void onFloatButtonLongPress() {
 @implementation UIView (GesturePrivate)
 - (void)handlePan:(UIPanGestureRecognizer *)gesture {
     UIView *ball = gesture.view;
-    CGPoint point = [gesture translationInView:[UIScreen mainScreen].bounds];
+    // ✅ 修复 translationInView 参数，传入nil
+    CGPoint point = [gesture translationInView:nil];
     if (gesture.state == UIGestureRecognizerStateBegan) {
         touchStartPoint = ball.center;
         isDragging = NO;
