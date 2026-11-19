@@ -18,35 +18,68 @@ void onFloatButtonTap() {
     [sender runScript:script];
 }
 
+void onFloatButtonLongPress() {
+    IOHIDTouchSender *sender = [IOHIDTouchSender sharedInstance];
+    NSString *scriptPath = @"/var/jb/Library/GlobalGestureTool/default.json";
+    if(sender.isRecording){
+        [sender stopRecordAndSaveToPath:scriptPath];
+    }else{
+        [sender startRecord];
+    }
+}
+
 %hook SpringBoard
 - (void)applicationDidFinishLaunching {
     %orig;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         if(floatWindow) return;
         
-        // 创建悬浮窗口，层级高于普通App，但是非独占，底层触摸可以穿透
         floatWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
         floatWindow.windowLevel = 10000000;
         floatWindow.backgroundColor = [UIColor clearColor];
         floatWindow.hidden = NO;
         
-        // 悬浮球视图，大小60*60，半透明深色圆形
         CGFloat ballSize = 60;
         floatBall = [[UIView alloc] initWithFrame:CGRectMake(30, 300, ballSize, ballSize)];
         floatBall.backgroundColor = [[UIColor darkGrayColor] colorWithAlphaComponent:0.75];
         floatBall.layer.cornerRadius = ballSize / 2.0;
         floatBall.layer.masksToBounds = YES;
         
-        // 添加点击+拖拽手势
         UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:&onFloatButtonTap action:@selector(onFloatButtonTap)];
-        [floatBall addGestureRecognizer:tap];
-        
+        UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:&onFloatButtonLongPress action:@selector(onFloatButtonLongPress)];
+        longPress.minimumPressDuration = 0.5;
         UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:floatBall action:@selector(handlePan:)];
+        
+        [floatBall addGestureRecognizer:tap];
+        [floatBall addGestureRecognizer:longPress];
         [floatBall addGestureRecognizer:pan];
         
         [floatWindow addSubview:floatBall];
         NSLog(@"[GlobalGestureTool] ✅ 悬浮窗口加载完成");
     });
+}
+%end
+
+// Hook UIApplication 触摸事件捕获，录制触摸坐标
+%hook UIApplication
+- (void)sendEvent:(UIEvent *)event {
+    %orig;
+    if(event.type == UIEventTypeTouches){
+        NSSet *touches = [event allTouches];
+        IOHIDTouchSender *sender = [IOHIDTouchSender sharedInstance];
+        if(!sender.isRecording) return;
+        for(UITouch *t in touches){
+            CGPoint pt = [t locationInView:nil];
+            GGTouchPhase p;
+            switch (t.phase) {
+                case UITouchPhaseBegan: p = GGTouchPhaseDown; break;
+                case UITouchPhaseMoved: p = GGTouchPhaseMove; break;
+                case UITouchPhaseEnded: p = GGTouchPhaseUp; break;
+                default: continue;
+            }
+            [sender addRecordFrameX:pt.x y:pt.y phase:p];
+        }
+    }
 }
 %end
 
