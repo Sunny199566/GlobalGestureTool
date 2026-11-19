@@ -10,9 +10,9 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Clone Theos
+      - name: Clone Theos (recursive submodules)
         run: |
-          git clone --depth 1 https://github.com/theos/theos.git $HOME/theos
+          git clone --depth 1 --recursive https://github.com/theos/theos.git $HOME/theos
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "PATH=$HOME/theos/bin:$PATH" >> $GITHUB_PATH
 
