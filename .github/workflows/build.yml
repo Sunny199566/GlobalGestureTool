@@ -27,7 +27,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install ldid dpkg make
+          brew install ldid dpkg make zip
 
       - name: Setup Theos env
         run: |
@@ -39,14 +39,18 @@ jobs:
           make clean
           make package FINALPACKAGE=1
 
-      # ========== 第二步：单独编译GestureManager，输出TrollStore IPA ==========
+      # ========== 第二步：GestureManager make stage + 手动zip打包IPA ==========
       - name: Build GestureManager IPA for TrollStore
         run: |
+          export THEOS=$GITHUB_WORKSPACE/theos
           cd GestureManager
           make clean
-          make package FINALPACKAGE=1 PACKAGE_FORMAT=ipa
-          # 将ipa复制到根目录，方便打包上传
-          cp packages/*.ipa $GITHUB_WORKSPACE/
+          make stage
+          APP_PATH=$(find .theos/_/Applications -name "GestureManager.app" -type d)
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          zip -r GestureManager.ipa Payload
+          cp GestureManager.ipa $GITHUB_WORKSPACE/
 
       # ========== 上传全部构建产物（deb + ipa）==========
       - name: Upload build artifacts
