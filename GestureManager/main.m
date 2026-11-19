@@ -1,9 +1,16 @@
 #import <UIKit/UIKit.h>
 
+@protocol GestureDaemonProtocol
+- (void)startRecord;
+- (void)stopRecord;
+- (void)playGesture;
+@end
+
 @interface MainViewController : UIViewController
 @property (nonatomic, strong) UIButton *recordBtn;
 @property (nonatomic, strong) UIButton *playBtn;
 @property (nonatomic, strong) UIButton *stopBtn;
+@property (nonatomic, strong) NSXPCConnection *connection;
 @end
 
 @implementation MainViewController
@@ -11,6 +18,11 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor systemBackgroundColor];
+    
+    // XPC连接初始化
+    self.connection = [[NSXPCConnection alloc] initWithMachServiceName:@"com.globalgesture.gesturemanager.xpc"];
+    self.connection.remoteObjectInterface = [NSXPCInterface interfaceWithProtocol:@protocol(GestureDaemonProtocol)];
+    [self.connection resume];
     
     CGFloat btnWidth = 220;
     CGFloat btnHeight = 50;
@@ -48,21 +60,36 @@
 }
 
 - (void)startRecordAction:(id)sender {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"提示" message:@"录制已启动（底层触摸采集逻辑需要对接PlayDaemon守护进程）" preferredStyle:UIAlertControllerStyleAlert];
-    [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
-    [self presentViewController:alert animated:YES completion:nil];
+    id<GestureDaemonProtocol> proxy = [self.connection remoteObjectProxyWithErrorHandler:^(NSError * _Nonnull error) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"错误" message:@"Daemon守护进程未启动，请重启设备！" preferredStyle:UIAlertControllerStyleAlert];
+            [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
+            [self presentViewController:alert animated:YES completion:nil];
+        });
+    }];
+    [proxy startRecord];
 }
 
 - (void)playAction:(id)sender {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"提示" message:@"回放已启动，由PlayDaemon执行触摸模拟" preferredStyle:UIAlertControllerStyleAlert];
-    [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
-    [self presentViewController:alert animated:YES completion:nil];
+    id<GestureDaemonProtocol> proxy = [self.connection remoteObjectProxyWithErrorHandler:^(NSError * _Nonnull error) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"错误" message:@"Daemon守护进程未启动，请重启设备！" preferredStyle:UIAlertControllerStyleAlert];
+            [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
+            [self presentViewController:alert animated:YES completion:nil];
+        });
+    }];
+    [proxy playGesture];
 }
 
 - (void)stopAction:(id)sender {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"提示" message:@"录制/回放已停止" preferredStyle:UIAlertControllerStyleAlert];
-    [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
-    [self presentViewController:alert animated:YES completion:nil];
+    id<GestureDaemonProtocol> proxy = [self.connection remoteObjectProxyWithErrorHandler:^(NSError * _Nonnull error) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"错误" message:@"Daemon守护进程未启动，请重启设备！" preferredStyle:UIAlertControllerStyleAlert];
+            [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
+            [self presentViewController:alert animated:YES completion:nil];
+        });
+    }];
+    [proxy stopRecord];
 }
 
 @end
