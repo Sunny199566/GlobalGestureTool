@@ -29,7 +29,7 @@ jobs:
         run: |
           brew install ldid dpkg gnu-sed
 
-      # ✅ 单独编译 GestureManager，输出二进制复制到layout
+      # ✅ 修复路径版本
       - name: Build GestureManager App Binary
         run: |
           export THEOS=$PWD/theos
@@ -38,15 +38,13 @@ jobs:
           make ARCHS=arm64e TARGET=iphone:clang:16.5:14.5 THEOS_PACKAGE_SCHEME=rootless
           cd ..
           mkdir -p layout/var/jb/Applications/GestureManager.app/
-          cp GestureManager/.theos/obj/arm64e/GestureManager layout/var/jb/Applications/GestureManager.app/GestureManager
+          cp GestureManager/.theos/_/Applications/GestureManager.app/GestureManager layout/var/jb/Applications/GestureManager.app/GestureManager
 
-      # ✅ 打包整个项目（RecordTweak + PlayDaemon + layout里面的GestureManager.app）
       - name: Run make package FINALPACKAGE=1
         run: |
           export THEOS=$PWD/theos
           make package FINALPACKAGE=1
 
-      # ✅ 上传编译好的deb作为Artifacts，下载安装
       - name: Upload Deb Artifact
         uses: actions/upload-artifact@v4
         with:
