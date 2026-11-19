@@ -1,18 +1,16 @@
-ARCHS = arm64e
+ARCHS = arm64 arm64e
 TARGET = iphone:clang:17.0:15.0
 INSTALL_TARGET_PROCESSES = SpringBoard
 
 include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = GlobalGestureTool
-
 GlobalGestureTool_FILES = Tweak.x IOHIDTouch.m
 GlobalGestureTool_CFLAGS = -fobjc-arc
-GlobalGestureTool_FRAMEWORKS = UIKit CoreGraphics IOKit
-GlobalGestureTool_PRIVATE_FRAMEWORKS = IOHIDFamily
+GlobalGestureTool_FRAMEWORKS = UIKit CoreGraphics
+GlobalGestureTool_PRIVATE_FRAMEWORKS = IOKit
 
-# rootless 关键配置
+# rootless 关键配置（适配 NathanLR）
 THEOS_PACKAGE_SCHEME = rootless
-THEOS_PACKAGE_INSTALL_PREFIX = /var/jb
 
 include $(THEOS_MAKE_PATH)/tweak.mk
