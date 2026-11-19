@@ -1,4 +1,4 @@
-name: Build GlobalGestureTool (Rootless)
+name: Build GlobalGestureTool (Rootless · SDK16.5)
 on:
   push:
   workflow_dispatch:
@@ -16,17 +16,13 @@ jobs:
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "PATH=$HOME/theos/bin:$PATH" >> $GITHUB_PATH
 
-      - name: Install p7zip
-        run: brew install p7zip
-
-      - name: Download & extract SDK repo, move all sdk folders
+      - name: Download official patched SDK repo
         run: |
           cd $THEOS/sdks
           curl -LO https://github.com/theos/sdks/archive/master.zip
-          7z x master.zip -y
-          SDK_FOLDER=$(find . -maxdepth 1 -type d -name "sdks-*")
-          mv $SDK_FOLDER/*.sdk ./
-          rm -rf $SDK_FOLDER master.zip
+          unzip -q master.zip
+          mv sdks-master/*.sdk ./
+          rm -rf sdks-master master.zip
 
       - name: Build Tweak & Package deb
         run: |
