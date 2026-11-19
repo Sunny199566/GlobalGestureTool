@@ -30,6 +30,12 @@ typedef NS_ENUM(NSInteger, GGTouchPhase) {
                                x:(CGFloat)x y:(CGFloat)y;
 - (void)runScript:(NSArray<GGTouchFrame*> *)scriptFrames;
 - (NSArray<GGTouchFrame*> *)loadScriptFromFile:(NSString *)path;
+
+// ========== 录制新增接口 ==========
+@property (nonatomic, assign) BOOL isRecording;
+- (void)startRecord;
+- (void)stopRecordAndSaveToPath:(NSString *)filePath;
+- (void)addRecordFrameX:(CGFloat)x y:(CGFloat)y phase:(GGTouchPhase)phase;
 @end
 
 #endif
