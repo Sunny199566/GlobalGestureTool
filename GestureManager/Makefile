@@ -7,5 +7,7 @@ include $(THEOS)/makefiles/common.mk
 APPLICATION_NAME = GestureManager
 GestureManager_FILES = main.m
 GestureManager_FRAMEWORKS = UIKit Foundation
+# ✅新增这一行，指定Info.plist，编译的时候自动打进.app包里面
+GestureManager_INFO_PLIST = Info.plist
 
 include $(THEOS_MAKE_PATH)/application.mk
