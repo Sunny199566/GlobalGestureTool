@@ -39,15 +39,15 @@ jobs:
           make clean
           make package FINALPACKAGE=1
 
-      # ========== GestureManager IPA构建修复版 ==========
+      # ========== GestureManager IPA构建【最终修复版】 ==========
       - name: Build GestureManager binary & manually construct IPA
         run: |
           export THEOS=$GITHUB_WORKSPACE/theos
           cd GestureManager
           make clean
           make all
-          # ✅ 找到arm64e架构编译出来的二进制文件
-          BIN_PATH=$(find .theos/obj -name "GestureManager" -type f)
+          # ✅ -type f 并且排除dSYM调试文件夹，只取真正的可执行文件，取第一条结果
+          BIN_PATH=$(find .theos/obj -name "GestureManager" -type f ! -path "*dSYM*" | head -n 1)
           echo "Binary path: $BIN_PATH"
           rm -rf Payload
           mkdir -p Payload/GestureManager.app
