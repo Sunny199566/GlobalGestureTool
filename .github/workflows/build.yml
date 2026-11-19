@@ -1,7 +1,7 @@
 name: Build GlobalGestureTool (Rootless)
 on:
   push:
-  workflow_dispatch: # ✅ 就是这一行！开启网页手动运行，解决你【工作流不存在/无dispatch触发器】报错
+  workflow_dispatch:
 
 jobs:
   build_tweak:
@@ -16,19 +16,19 @@ jobs:
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "PATH=$HOME/theos/bin:$PATH" >> $GITHUB_PATH
 
-      - name: Download iPhoneOS17.0 SDK
+      - name: Download iPhoneOS17.0 SDK (Direct single file download)
         run: |
           cd $THEOS/sdks
-          git clone --depth 1 https://github.com/theos/sdks.git temp_sdk
-          mv temp_sdk/iPhoneOS17.0.sdk ./
-          rm -rf temp_sdk
+          curl -L -o iPhoneOS17.0.sdk.tar.xz https://github.com/theos/sdks/raw/master/iPhoneOS17.0.sdk.tar.xz
+          tar -xf iPhoneOS17.0.sdk.tar.xz
+          rm iPhoneOS17.0.sdk.tar.xz
 
       - name: Build Tweak & Package deb
         run: |
           make clean
           make package
 
-      - name: Upload deb as Artifact（打包成功后，可以在这里下载deb）
+      - name: Upload deb as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: GlobalGestureTool-rootless-deb
