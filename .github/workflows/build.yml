@@ -1,4 +1,4 @@
-name: Build GlobalGestureTool (Rootless · SDK16.5)
+name: Build GlobalGestureTool (Rootless · SDK16.5 git clone sdks)
 on:
   push:
   workflow_dispatch:
@@ -16,13 +16,11 @@ jobs:
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "PATH=$HOME/theos/bin:$PATH" >> $GITHUB_PATH
 
-      - name: Download official patched SDK repo
+      - name: Clone sdks repo via git (safe symlink handling)
         run: |
-          cd $THEOS/sdks
-          curl -LO https://github.com/theos/sdks/archive/master.zip
-          unzip -q master.zip
-          mv sdks-master/*.sdk ./
-          rm -rf sdks-master master.zip
+          cd $HOME/theos
+          rm -rf sdks
+          git clone --depth 1 https://github.com/theos/sdks.git sdks
 
       - name: Build Tweak & Package deb
         run: |
