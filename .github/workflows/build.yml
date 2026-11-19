@@ -33,21 +33,27 @@ jobs:
         run: |
           echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
 
-      - name: Build all subprojects
+      # ========== 第一步：编译越狱deb包（RecordTweak + PlayDaemon）==========
+      - name: Build deb package (Tweak & Daemon)
         run: |
-          export THEOS=$GITHUB_WORKSPACE/theos
           make clean
           make package FINALPACKAGE=1
 
-      # ✅ 改动重点：从整个仓库根目录搜索GestureManager.app，不再限定GestureManager/.theos
-      - name: Copy GestureManager app into layout & delete .gitkeep
+      # ========== 第二步：单独编译GestureManager，输出TrollStore IPA ==========
+      - name: Build GestureManager IPA for TrollStore
         run: |
-          mkdir -p layout/Applications/
-          find . -name "GestureManager.app" -type d -exec cp -R {} layout/Applications/ \;
-          find layout -name ".gitkeep" -delete
+          cd GestureManager
+          make clean
+          make package FINALPACKAGE=1 PACKAGE_FORMAT=ipa
+          # 将ipa复制到根目录，方便打包上传
+          cp packages/*.ipa $GITHUB_WORKSPACE/
 
-      - name: Upload deb artifact
+      # ========== 上传全部构建产物（deb + ipa）==========
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: GlobalGestureTool-Deb
-          path: ./packages/*.deb
+          name: GlobalGestureTool-Build
+          path: |
+            ./packages/*.deb
+            ./*.ipa
+          retention-days: 30
