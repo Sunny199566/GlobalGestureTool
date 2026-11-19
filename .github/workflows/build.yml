@@ -10,22 +10,23 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Setup Theos manually
+      - name: Clone Theos
         run: |
           git clone --depth 1 https://github.com/theos/theos.git $HOME/theos
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "PATH=$HOME/theos/bin:$PATH" >> $GITHUB_PATH
 
-      - name: Install p7zip (7z)
+      - name: Install p7zip
         run: brew install p7zip
 
-      - name: Download & Extract SDK with 7z (skip symlinks!)
+      - name: Download & extract SDK repo, move all sdk folders
         run: |
           cd $THEOS/sdks
           curl -LO https://github.com/theos/sdks/archive/master.zip
           7z x master.zip -y
-          mv sdks-master/iPhoneOS17.0.sdk ./
-          rm -rf sdks-master master.zip
+          SDK_FOLDER=$(find . -maxdepth 1 -type d -name "sdks-*")
+          mv $SDK_FOLDER/*.sdk ./
+          rm -rf $SDK_FOLDER master.zip
 
       - name: Build Tweak & Package deb
         run: |
