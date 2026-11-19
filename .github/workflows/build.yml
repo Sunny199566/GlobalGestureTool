@@ -39,26 +39,26 @@ jobs:
           make clean
           make package FINALPACKAGE=1
 
-      # ========== 【全新方案】只编译二进制，手动组装完整IPA包 ==========
+      # ========== GestureManager IPA构建修复版 ==========
       - name: Build GestureManager binary & manually construct IPA
         run: |
           export THEOS=$GITHUB_WORKSPACE/theos
           cd GestureManager
           make clean
-          # 只编译链接，只拿可执行文件，不使用stage
           make all
-          # 创建标准IPA目录结构 Payload/GestureManager.app
+          # ✅ 找到arm64e架构编译出来的二进制文件
+          BIN_PATH=$(find .theos/obj -name "GestureManager" -type f)
+          echo "Binary path: $BIN_PATH"
           rm -rf Payload
           mkdir -p Payload/GestureManager.app
-          # 拷贝编译出来的可执行文件
-          cp GestureManager Payload/GestureManager.app/
-          # 直接拷贝Info.plist（仓库里的文件，百分百存在）
+          # 复制二进制
+          cp "$BIN_PATH" Payload/GestureManager.app/GestureManager
+          # 复制Info.plist
           cp Info.plist Payload/GestureManager.app/
           # ldid签名
           ldid -s Payload/GestureManager.app/GestureManager
-          # zip打包成标准IPA
+          # 打包ipa
           zip -r GestureManager.ipa Payload
-          # 复制到仓库根目录用于上传artifact
           cp GestureManager.ipa $GITHUB_WORKSPACE/
 
       # ========== 上传产物 deb + ipa ==========
