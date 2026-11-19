@@ -33,18 +33,17 @@ jobs:
         run: |
           echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
 
-      # ✅ 第一步：先编译！生成 .theos 和 GestureManager.app
       - name: Build all subprojects
         run: |
           export THEOS=$GITHUB_WORKSPACE/theos
           make clean
           make package FINALPACKAGE=1
 
-      # ✅ 第二步：编译完成之后，再复制App + 删除占位文件
+      # ✅ 改动重点：从整个仓库根目录搜索GestureManager.app，不再限定GestureManager/.theos
       - name: Copy GestureManager app into layout & delete .gitkeep
         run: |
           mkdir -p layout/Applications/
-          find GestureManager/.theos -name "GestureManager.app" -type d -exec cp -R {} layout/Applications/ \;
+          find . -name "GestureManager.app" -type d -exec cp -R {} layout/Applications/ \;
           find layout -name ".gitkeep" -delete
 
       - name: Upload deb artifact
