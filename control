@@ -1,0 +1,8 @@
+Package: com.yourname.globalgesturetool
+Name: GlobalGestureTool
+Version: 0.0.1
+Architecture: iphoneos-arm64e
+Description: Gesture recorder & replay with isolated finger id, float button trigger
+Maintainer: YourName
+Section: Tweaks
+Depends: mobilesubstrate (>= 0.9.11), firmware (>=15.0)
