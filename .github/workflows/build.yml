@@ -18,7 +18,6 @@ jobs:
           submodules: recursive
           path: theos
 
-      # ✅ 修改为仓库内存在的 iPhoneOS16.5.sdk
       - name: Checkout SDK 16.5
         uses: actions/checkout@v4
         with:
@@ -28,13 +27,28 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install make ldid xz
-          echo "THEOS=$PWD/theos" >> $GITHUB_ENV
+          brew install ldid dpkg gnu-sed
 
-      - name: Build deb
-        run: make package FINALPACKAGE=1
+      # ✅ 单独编译 GestureManager，输出二进制复制到layout
+      - name: Build GestureManager App Binary
+        run: |
+          export THEOS=$PWD/theos
+          cd GestureManager
+          make clean
+          make ARCHS=arm64e TARGET=iphone:clang:16.5:14.5 THEOS_PACKAGE_SCHEME=rootless
+          cd ..
+          mkdir -p layout/var/jb/Applications/GestureManager.app/
+          cp GestureManager/.theos/obj/arm64e/GestureManager layout/var/jb/Applications/GestureManager.app/GestureManager
 
-      - name: Upload deb
+      # ✅ 打包整个项目（RecordTweak + PlayDaemon + layout里面的GestureManager.app）
+      - name: Run make package FINALPACKAGE=1
+        run: |
+          export THEOS=$PWD/theos
+          make package FINALPACKAGE=1
+
+      # ✅ 上传编译好的deb作为Artifacts，下载安装
+      - name: Upload Deb Artifact
         uses: actions/upload-artifact@v4
         with:
+          name: GlobalGestureTool-deb
           path: packages/*.deb
