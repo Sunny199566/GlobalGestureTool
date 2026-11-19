@@ -6,8 +6,11 @@
 typedef CFTypeRef IOHIDDigitizerEventRef;
 IOHIDDigitizerEventRef IOHIDDigitizerEventCreate(CFAllocatorRef alloc, NSInteger fingerID);
 void IOHIDDigitizerEventSetPosition(IOHIDDigitizerEventRef event, CGPoint pt);
-void IOHIDDigitizerEventSetIsTouching(IOHIDDigitizerEventRef event, Boolean touching);
 void IOHIDDigitizerEventSetTouchType(IOHIDDigitizerEventRef event, int type);
+void IOHIDDigitizerEventSetIsTouching(IOHIDDigitizerEventRef event, Boolean touching);
+
+// ✅ 新增：IOHIDEventPost 函数原型声明
+extern void IOHIDEventPost(IOHIDEventRef event, uint32_t flags);
 
 #define kIOHIDDigitizerEventTouchTypeFinger 0
 
