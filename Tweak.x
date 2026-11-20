@@ -1,4 +1,5 @@
 #import <UIKit/UIKit.h>
+#import "IOHIDTouch.h"
 
 static UIWindow *floatWindow;
 static UIView *floatBall;
@@ -26,22 +27,24 @@ static CGPoint touchOffset;
     }
 }
 - (void)tapAction:(UITapGestureRecognizer *)sender {
-    NSLog(@"[GlobalGestureTool] ✅ 单击触发回放");
-    // ========== 【这里写你的回放代码，不要用变量名 sender！】 ==========
-    // IOHIDTouchSender *touchSender = [IOHIDTouchSender sharedInstance];
-    // [touchSender 你的回放方法];
+    NSLog(@"[GlobalGestureTool] ✅ 单击：读取脚本并回放");
+    IOHIDTouchSender *touchSender = [IOHIDTouchSender sharedInstance];
+    // 你可以自行修改存储路径，这里示例放到 /tmp/ggtouch_script.plist
+    NSString *scriptPath = @"/tmp/ggtouch_script.plist";
+    NSArray<GGTouchFrame*> *frames = [touchSender loadScriptFromFile:scriptPath];
+    if(frames.count > 0) {
+        [touchSender runScript:frames];
+    }
 }
 - (void)longPressAction:(UILongPressGestureRecognizer *)sender {
+    IOHIDTouchSender *touchSender = [IOHIDTouchSender sharedInstance];
     if(sender.state == UIGestureRecognizerStateBegan) {
         NSLog(@"[GlobalGestureTool] ✅ 长按开始录制");
-        // ========== 【这里写开始录制代码】 ==========
-        // IOHIDTouchSender *touchSender = [IOHIDTouchSender sharedInstance];
-        // [touchSender 开始录制方法];
+        [touchSender startRecord];
     } else if(sender.state == UIGestureRecognizerStateEnded) {
-        NSLog(@"[GlobalGestureTool] ✅ 长按结束录制");
-        // ========== 【这里写停止录制代码】 ==========
-        // IOHIDTouchSender *touchSender = [IOHIDTouchSender sharedInstance];
-        // [touchSender 停止录制方法];
+        NSLog(@"[GlobalGestureTool] ✅ 长按结束录制，保存脚本");
+        NSString *savePath = @"/tmp/ggtouch_script.plist";
+        [touchSender stopRecordAndSaveToPath:savePath];
     }
 }
 @end
