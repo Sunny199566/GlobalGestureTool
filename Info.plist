@@ -10,5 +10,12 @@
 	<string>0.0.1</string>
 	<key>MinimumOSVersion</key>
 	<string>15.0</string>
+	<key>Filter</key>
+	<dict>
+		<key>Bundles</key>
+		<array>
+			<string>com.apple.springboard</string>
+		</array>
+	</dict>
 </dict>
 </plist>
