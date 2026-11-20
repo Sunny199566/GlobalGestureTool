@@ -6,10 +6,12 @@ static UIView *floatBall;
 static CGPoint touchStartPoint;
 static BOOL isDragging;
 
-// ✅ 手势Target辅助类
+// ✅ 手势Target + Pan拖拽全部放到独立Helper类，不再污染系统UIView
 @interface GestureTargetHelper : NSObject
+@property (nonatomic, weak) UIView *floatBall;
 - (void)onFloatButtonTap:(UITapGestureRecognizer *)gesture;
 - (void)onFloatButtonLongPress:(UILongPressGestureRecognizer *)gesture;
+- (void)handlePan:(UIPanGestureRecognizer *)gesture;
 @end
 
 @implementation GestureTargetHelper
@@ -24,6 +26,7 @@ static BOOL isDragging;
     }
     [sender runScript:script];
 }
+
 - (void)onFloatButtonLongPress:(UILongPressGestureRecognizer *)gesture {
     IOHIDTouchSender *sender = [IOHIDTouchSender sharedInstance];
     NSString *scriptPath = @"/var/jb/Library/GlobalGestureTool/default.json";
@@ -33,16 +36,26 @@ static BOOL isDragging;
         [sender startRecord];
     }
 }
+
+- (void)handlePan:(UIPanGestureRecognizer *)gesture {
+    UIView *ball = self.floatBall;
+    CGPoint point = [gesture translationInView:ball.superview];
+    if (gesture.state == UIGestureRecognizerStateBegan) {
+        touchStartPoint = ball.center;
+        isDragging = NO;
+    } else if (gesture.state == UIGestureRecognizerStateChanged) {
+        ball.center = CGPointMake(touchStartPoint.x + point.x, touchStartPoint.y + point.y);
+        isDragging = YES;
+    }
+}
 @end
 
 static GestureTargetHelper *gestureTarget;
 
-%hook SpringBoard
-- (void)applicationDidFinishLaunching {
-    %orig;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        if(floatWindow) return;
-        
+// ✅ 使用 %ctor 全局入口，优先执行，比hook SpringBoard启动方法稳定非常多（iOS17首选方案）
+%ctor {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        gestureTarget = [[GestureTargetHelper alloc] init];
         floatWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
         floatWindow.windowLevel = 10000000;
         floatWindow.backgroundColor = [UIColor clearColor];
@@ -53,14 +66,12 @@ static GestureTargetHelper *gestureTarget;
         floatBall.backgroundColor = [[UIColor darkGrayColor] colorWithAlphaComponent:0.75];
         floatBall.layer.cornerRadius = ballSize / 2.0;
         floatBall.layer.masksToBounds = YES;
-
-        // ✅ 创建手势target实例
-        gestureTarget = [[GestureTargetHelper alloc] init];
+        gestureTarget.floatBall = floatBall;
         
         UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:gestureTarget action:@selector(onFloatButtonTap:)];
         UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:gestureTarget action:@selector(onFloatButtonLongPress:)];
         longPress.minimumPressDuration = 0.5;
-        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:floatBall action:@selector(handlePan:)];
+        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:gestureTarget action:@selector(handlePan:)];
         
         [floatBall addGestureRecognizer:tap];
         [floatBall addGestureRecognizer:longPress];
@@ -70,7 +81,6 @@ static GestureTargetHelper *gestureTarget;
         NSLog(@"[GlobalGestureTool] ✅ 悬浮窗口加载完成");
     });
 }
-%end
 
 // Hook UIApplication 触摸事件捕获，录制触摸坐标
 %hook UIApplication
@@ -94,21 +104,3 @@ static GestureTargetHelper *gestureTarget;
     }
 }
 %end
-
-@interface UIView (GesturePrivate)
-- (void)handlePan:(UIPanGestureRecognizer *)gesture;
-@end
-@implementation UIView (GesturePrivate)
-- (void)handlePan:(UIPanGestureRecognizer *)gesture {
-    UIView *ball = gesture.view;
-    // ✅ 修复 translationInView 参数，传入nil
-    CGPoint point = [gesture translationInView:nil];
-    if (gesture.state == UIGestureRecognizerStateBegan) {
-        touchStartPoint = ball.center;
-        isDragging = NO;
-    } else if (gesture.state == UIGestureRecognizerStateChanged) {
-        ball.center = CGPointMake(touchStartPoint.x + point.x, touchStartPoint.y + point.y);
-        isDragging = YES;
-    }
-}
-@end
