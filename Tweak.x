@@ -6,9 +6,9 @@ static UIView *floatBall;
 static CGPoint touchStartPoint;
 static BOOL isDragging;
 
-// ✅ 手势Target + Pan拖拽全部放到独立Helper类，不再污染系统UIView
+// ✅ weak → assign，适配MRC手动引用计数
 @interface GestureTargetHelper : NSObject
-@property (nonatomic, weak) UIView *floatBall;
+@property (nonatomic, assign) UIView *floatBall;
 - (void)onFloatButtonTap:(UITapGestureRecognizer *)gesture;
 - (void)onFloatButtonLongPress:(UILongPressGestureRecognizer *)gesture;
 - (void)handlePan:(UIPanGestureRecognizer *)gesture;
@@ -52,7 +52,6 @@ static BOOL isDragging;
 
 static GestureTargetHelper *gestureTarget;
 
-// ✅ 使用 %ctor 全局入口，优先执行，比hook SpringBoard启动方法稳定非常多（iOS17首选方案）
 %ctor {
     dispatch_async(dispatch_get_main_queue(), ^{
         gestureTarget = [[GestureTargetHelper alloc] init];
