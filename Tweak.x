@@ -55,8 +55,16 @@ static GestureTargetHelper *gestureTarget;
     %orig;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         if(floatBall) return;
-        UIView *rootView = [UIApplication sharedApplication].keyWindow.rootViewController.view;
-        if(!rootView) return;
+        
+        UIWindow *targetWindow = nil;
+        for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
+            if ([scene isKindOfClass:[UIWindowScene class]] && scene.activationState == UISceneActivationStateForegroundActive) {
+                targetWindow = scene.windows.firstObject;
+                if(targetWindow) break;
+            }
+        }
+        if(!targetWindow || !targetWindow.rootViewController.view) return;
+        UIView *rootView = targetWindow.rootViewController.view;
         
         gestureTarget = [[GestureTargetHelper alloc] init];
         CGFloat ballSize = 60;
