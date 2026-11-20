@@ -1,113 +1,78 @@
 #import <UIKit/UIKit.h>
 #import "IOHIDTouch.h"
 
+static UIWindow *floatWindow;
 static UIView *floatBall;
-static CGPoint touchStartPoint;
+static CGPoint touchOffset;
 static BOOL isDragging;
 
-@interface GestureTargetHelper : NSObject
-@property (nonatomic, assign) UIView *floatBall;
-- (void)onFloatButtonTap:(UITapGestureRecognizer *)gesture;
-- (void)onFloatButtonLongPress:(UILongPressGestureRecognizer *)gesture;
-- (void)handlePan:(UIPanGestureRecognizer *)gesture;
+@interface GestureHelper : NSObject
+@property (nonatomic, assign) UIView *ball;
+- (void)panAction:(UIPanGestureRecognizer *)sender;
+- (void)tapAction:(UITapGestureRecognizer *)sender;
+- (void)longPressAction:(UILongPressGestureRecognizer *)sender;
 @end
 
-@implementation GestureTargetHelper
-- (void)onFloatButtonTap:(UITapGestureRecognizer *)gesture {
-    NSLog(@"[GlobalGestureTool] ✅ 悬浮球单击触发，开始回放脚本");
-    IOHIDTouchSender *sender = [IOHIDTouchSender sharedInstance];
-    NSString *scriptPath = @"/var/jb/Library/GlobalGestureTool/default.json";
-    NSArray<GGTouchFrame*> *script = [sender loadScriptFromFile:scriptPath];
-    if (script.count == 0) {
-        NSLog(@"[GlobalGestureTool] ⚠️ 脚本为空或者文件不存在");
-        return;
-    }
-    [sender runScript:script];
-}
-
-- (void)onFloatButtonLongPress:(UILongPressGestureRecognizer *)gesture {
-    IOHIDTouchSender *sender = [IOHIDTouchSender sharedInstance];
-    NSString *scriptPath = @"/var/jb/Library/GlobalGestureTool/default.json";
-    if(sender.isRecording){
-        [sender stopRecordAndSaveToPath:scriptPath];
-    }else{
-        [sender startRecord];
+@implementation GestureHelper
+- (void)panAction:(UIPanGestureRecognizer *)sender {
+    UIView *ball = self.ball;
+    if(sender.state == UIGestureRecognizerStateBegan) {
+        touchOffset = [sender locationInView:ball];
+    } else if(sender.state == UIGestureRecognizerStateChanged) {
+        CGPoint pt = [sender locationInView:ball.superview];
+        CGRect frame = ball.frame;
+        frame.origin.x = pt.x - touchOffset.x;
+        frame.origin.y = pt.y - touchOffset.y;
+        ball.frame = frame;
     }
 }
-
-- (void)handlePan:(UIPanGestureRecognizer *)gesture {
-    UIView *ball = self.floatBall;
-    CGPoint point = [gesture translationInView:ball.superview];
-    if (gesture.state == UIGestureRecognizerStateBegan) {
-        touchStartPoint = ball.center;
-        isDragging = NO;
-    } else if (gesture.state == UIGestureRecognizerStateChanged) {
-        ball.center = CGPointMake(touchStartPoint.x + point.x, touchStartPoint.y + point.y);
-        isDragging = YES;
+- (void)tapAction:(UITapGestureRecognizer *)sender {
+    NSLog(@"[GlobalGestureTool] ✅ 单击触发回放");
+    IOHIDTouchSender *sender = [[IOHIDTouchSender alloc] init];
+    [sender playRecordedGesture];
+}
+- (void)longPressAction:(UILongPressGestureRecognizer *)sender {
+    if(sender.state == UIGestureRecognizerStateBegan) {
+        NSLog(@"[GlobalGestureTool] ✅ 长按开始录制");
+        [[IOHIDTouchSender sharedInstance] startRecord];
+    } else if(sender.state == UIGestureRecognizerStateEnded) {
+        NSLog(@"[GlobalGestureTool] ✅ 长按结束录制");
+        [[IOHIDTouchSender sharedInstance] stopRecord];
     }
 }
 @end
 
-static GestureTargetHelper *gestureTarget;
-
-%hook SpringBoard
-- (void)applicationDidFinishLaunching {
-    %orig;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        if(floatBall) return;
+%ctor {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        if(floatWindow) return;
+        floatWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+        floatWindow.windowLevel = UIWindowLevelAlert + 9999;
+        floatWindow.hidden = NO;
         
-        UIWindow *targetWindow = nil;
-        for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
-            if ([scene isKindOfClass:[UIWindowScene class]] && scene.activationState == UISceneActivationStateForegroundActive) {
-                targetWindow = scene.windows.firstObject;
-                if(targetWindow) break;
-            }
-        }
-        if(!targetWindow || !targetWindow.rootViewController.view) return;
-        UIView *rootView = targetWindow.rootViewController.view;
+        GestureHelper *helper = [GestureHelper new];
+        CGFloat size = 60;
+        floatBall = [[UIView alloc] initWithFrame:CGRectMake(30,300,size,size)];
+        floatBall.backgroundColor = [[UIColor darkGrayColor] colorWithAlphaComponent:0.8];
+        floatBall.layer.cornerRadius = size/2.0;
+        floatBall.layer.zPosition = 9999999;
+        helper.ball = floatBall;
         
-        gestureTarget = [[GestureTargetHelper alloc] init];
-        CGFloat ballSize = 60;
-        floatBall = [[UIView alloc] initWithFrame:CGRectMake(30, 300, ballSize, ballSize)];
-        floatBall.backgroundColor = [[UIColor darkGrayColor] colorWithAlphaComponent:0.75];
-        floatBall.layer.cornerRadius = ballSize / 2.0;
-        floatBall.layer.masksToBounds = YES;
-        gestureTarget.floatBall = floatBall;
-        
-        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:gestureTarget action:@selector(onFloatButtonTap:)];
-        UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:gestureTarget action:@selector(onFloatButtonLongPress:)];
-        longPress.minimumPressDuration = 0.5;
-        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:gestureTarget action:@selector(handlePan:)];
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:helper action:@selector(tapAction:)];
+        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:helper action:@selector(panAction:)];
+        UILongPressGestureRecognizer *lp = [[UILongPressGestureRecognizer alloc] initWithTarget:helper action:@selector(longPressAction:)];
+        lp.minimumPressDuration = 0.4;
         
         [floatBall addGestureRecognizer:tap];
-        [floatBall addGestureRecognizer:longPress];
         [floatBall addGestureRecognizer:pan];
+        [floatBall addGestureRecognizer:lp];
+        [floatWindow addSubview:floatBall];
         
-        [rootView addSubview:floatBall];
-        NSLog(@"[GlobalGestureTool] ✅ 悬浮球已经添加到SpringBoard根视图");
+        NSLog(@"[GlobalGestureTool] ✅ UIWindow悬浮窗口创建成功");
     });
 }
-%end
 
-// Hook UIApplication 触摸事件捕获，录制触摸坐标
 %hook UIApplication
 - (void)sendEvent:(UIEvent *)event {
     %orig;
-    if(event.type == UIEventTypeTouches){
-        NSSet *touches = [event allTouches];
-        IOHIDTouchSender *sender = [IOHIDTouchSender sharedInstance];
-        if(!sender.isRecording) return;
-        for(UITouch *t in touches){
-            CGPoint pt = [t locationInView:nil];
-            GGTouchPhase p;
-            switch (t.phase) {
-                case UITouchPhaseBegan: p = GGTouchPhaseDown; break;
-                case UITouchPhaseMoved: p = GGTouchPhaseMove; break;
-                case UITouchPhaseEnded: p = GGTouchPhaseUp; break;
-                default: continue;
-            }
-            [sender addRecordFrameX:pt.x y:pt.y phase:p];
-        }
-    }
 }
 %end
