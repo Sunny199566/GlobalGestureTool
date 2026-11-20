@@ -6,7 +6,7 @@ static UIView *floatBall;
 static CGPoint touchOffset;
 
 @interface GestureHelper : NSObject
-@property (nonatomic, weak) UIView *ball;
+@property (nonatomic, assign) UIView *ball;
 - (void)panAction:(UIPanGestureRecognizer *)sender;
 - (void)tapAction:(UITapGestureRecognizer *)sender;
 - (void)longPressAction:(UILongPressGestureRecognizer *)sender;
@@ -29,7 +29,6 @@ static CGPoint touchOffset;
 - (void)tapAction:(UITapGestureRecognizer *)sender {
     NSLog(@"[GlobalGestureTool] ✅ 单击：读取脚本并回放");
     IOHIDTouchSender *touchSender = [IOHIDTouchSender sharedInstance];
-    // 你可以自行修改存储路径，这里示例放到 /tmp/ggtouch_script.plist
     NSString *scriptPath = @"/tmp/ggtouch_script.plist";
     NSArray<GGTouchFrame*> *frames = [touchSender loadScriptFromFile:scriptPath];
     if(frames.count > 0) {
