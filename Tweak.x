@@ -1,12 +1,10 @@
 #import <UIKit/UIKit.h>
 #import "IOHIDTouch.h"
 
-static UIWindow *floatWindow;
 static UIView *floatBall;
 static CGPoint touchStartPoint;
 static BOOL isDragging;
 
-// ✅ weak → assign，适配MRC手动引用计数
 @interface GestureTargetHelper : NSObject
 @property (nonatomic, assign) UIView *floatBall;
 - (void)onFloatButtonTap:(UITapGestureRecognizer *)gesture;
@@ -52,14 +50,15 @@ static BOOL isDragging;
 
 static GestureTargetHelper *gestureTarget;
 
-%ctor {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        gestureTarget = [[GestureTargetHelper alloc] init];
-        floatWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
-        floatWindow.windowLevel = 10000000;
-        floatWindow.backgroundColor = [UIColor clearColor];
-        floatWindow.hidden = NO;
+%hook SpringBoard
+- (void)applicationDidFinishLaunching {
+    %orig;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        if(floatBall) return;
+        UIView *rootView = [UIApplication sharedApplication].keyWindow.rootViewController.view;
+        if(!rootView) return;
         
+        gestureTarget = [[GestureTargetHelper alloc] init];
         CGFloat ballSize = 60;
         floatBall = [[UIView alloc] initWithFrame:CGRectMake(30, 300, ballSize, ballSize)];
         floatBall.backgroundColor = [[UIColor darkGrayColor] colorWithAlphaComponent:0.75];
@@ -76,10 +75,11 @@ static GestureTargetHelper *gestureTarget;
         [floatBall addGestureRecognizer:longPress];
         [floatBall addGestureRecognizer:pan];
         
-        [floatWindow addSubview:floatBall];
-        NSLog(@"[GlobalGestureTool] ✅ 悬浮窗口加载完成");
+        [rootView addSubview:floatBall];
+        NSLog(@"[GlobalGestureTool] ✅ 悬浮球已经添加到SpringBoard根视图");
     });
 }
+%end
 
 // Hook UIApplication 触摸事件捕获，录制触摸坐标
 %hook UIApplication
