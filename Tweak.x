@@ -1,13 +1,11 @@
 #import <UIKit/UIKit.h>
-#import "IOHIDTouch.h"
 
 static UIWindow *floatWindow;
 static UIView *floatBall;
 static CGPoint touchOffset;
-static BOOL isDragging;
 
 @interface GestureHelper : NSObject
-@property (nonatomic, assign) UIView *ball;
+@property (nonatomic, weak) UIView *ball;
 - (void)panAction:(UIPanGestureRecognizer *)sender;
 - (void)tapAction:(UITapGestureRecognizer *)sender;
 - (void)longPressAction:(UILongPressGestureRecognizer *)sender;
@@ -16,6 +14,7 @@ static BOOL isDragging;
 @implementation GestureHelper
 - (void)panAction:(UIPanGestureRecognizer *)sender {
     UIView *ball = self.ball;
+    if (!ball) return;
     if(sender.state == UIGestureRecognizerStateBegan) {
         touchOffset = [sender locationInView:ball];
     } else if(sender.state == UIGestureRecognizerStateChanged) {
@@ -28,16 +27,21 @@ static BOOL isDragging;
 }
 - (void)tapAction:(UITapGestureRecognizer *)sender {
     NSLog(@"[GlobalGestureTool] ✅ 单击触发回放");
-    IOHIDTouchSender *sender = [[IOHIDTouchSender alloc] init];
-    [sender playRecordedGesture];
+    // ========== 【这里写你的回放代码，不要用变量名 sender！】 ==========
+    // IOHIDTouchSender *touchSender = [IOHIDTouchSender sharedInstance];
+    // [touchSender 你的回放方法];
 }
 - (void)longPressAction:(UILongPressGestureRecognizer *)sender {
     if(sender.state == UIGestureRecognizerStateBegan) {
         NSLog(@"[GlobalGestureTool] ✅ 长按开始录制");
-        [[IOHIDTouchSender sharedInstance] startRecord];
+        // ========== 【这里写开始录制代码】 ==========
+        // IOHIDTouchSender *touchSender = [IOHIDTouchSender sharedInstance];
+        // [touchSender 开始录制方法];
     } else if(sender.state == UIGestureRecognizerStateEnded) {
         NSLog(@"[GlobalGestureTool] ✅ 长按结束录制");
-        [[IOHIDTouchSender sharedInstance] stopRecord];
+        // ========== 【这里写停止录制代码】 ==========
+        // IOHIDTouchSender *touchSender = [IOHIDTouchSender sharedInstance];
+        // [touchSender 停止录制方法];
     }
 }
 @end
@@ -70,9 +74,3 @@ static BOOL isDragging;
         NSLog(@"[GlobalGestureTool] ✅ UIWindow悬浮窗口创建成功");
     });
 }
-
-%hook UIApplication
-- (void)sendEvent:(UIEvent *)event {
-    %orig;
-}
-%end
